@@ -67,13 +67,10 @@ export class PaymentMethodsController {
   @Patch(':id')
   async update(
     @Param('id') id: string,
-    @Body() updatePaymentMethodDto: UpdatePaymentMethodDto,
+    @Body() body: UpdatePaymentMethodDto,
     @Res() res: Response,
   ) {
-    const paymentMethod = await this.paymentMethodsService.update(
-      +id,
-      updatePaymentMethodDto,
-    );
+    const paymentMethod = await this.paymentMethodsService.update(+id, body);
     if (!paymentMethod) {
       return res.status(HttpStatus.NOT_FOUND).json({
         success: false,

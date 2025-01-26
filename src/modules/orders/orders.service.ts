@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { ShippingStatus } from 'src/app.interface';
 import { PrismaService } from 'src/db/prisma.service';
 import { redis } from 'src/utils/redis';
 
@@ -127,6 +128,44 @@ export class OrdersService {
         user: true,
         paymentMethod: true,
       },
+    });
+  }
+
+  async removeOrderByUser(userId: number, orderId: number) {
+    // Bắt đầu giao dịch để đảm bảo tính toàn vẹn dữ liệu
+    return await this.prisma.$transaction(async (prisma) => {
+      // Cập nhật trạng thái đơn hàng thành CANCELED
+      const order = await prisma.order.update({
+        where: {
+          id: orderId,
+          userId: userId,
+        },
+        data: {
+          shippingStatus: ShippingStatus.CANCELED,
+        },
+        include: {
+          user: true,
+          paymentMethod: true,
+          products: {
+            include: {
+              product: true,
+            },
+          },
+        },
+      });
+      // Lặp qua từng sản phẩm trong đơn hàng để cập nhật lại kho
+      for (const orderProduct of order.products) {
+        await prisma.product.update({
+          where: { id: orderProduct.productId },
+          data: {
+            quantity: {
+              increment: orderProduct.quantity, // Cộng lại số lượng sản phẩm vào kho
+            },
+          },
+        });
+      }
+
+      return order;
     });
   }
 

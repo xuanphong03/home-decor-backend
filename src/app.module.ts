@@ -18,11 +18,23 @@ import { OrdersModule as ClientOrdersModule } from './modules/client/orders/orde
 import { PrismaService } from './db/prisma.service';
 import { ChatsModule } from './modules/chats/chats.module';
 import { AtStrategy } from './strategies';
+import { ScheduleModule } from '@nestjs/schedule';
+import { BullModule } from '@nestjs/bullmq';
+import { QueueName } from './app.interface';
+import { EmailConsumer } from './email.consumer';
 
 @Module({
   imports: [
     ConfigModule.forRoot({}),
     EventEmitterModule.forRoot(),
+    ScheduleModule.forRoot(),
+    BullModule.forRoot({
+      connection: {
+        host: 'localhost',
+        port: 6379,
+      },
+    }),
+    BullModule.registerQueue({ name: QueueName.EMAIL }),
     AuthModule,
     ClientUsersModule,
     ProfileModule,
@@ -38,6 +50,6 @@ import { AtStrategy } from './strategies';
     ChatsModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService, AtStrategy],
+  providers: [AppService, PrismaService, AtStrategy, EmailConsumer],
 })
 export class AppModule {}

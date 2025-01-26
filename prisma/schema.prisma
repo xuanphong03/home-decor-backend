@@ -38,6 +38,8 @@ model User {
   conversationsAsAdmin Conversation[] @relation("AdminConversations")
   messagesSent         Message[]
 
+  reviews Review[]
+
   @@map("users")
 }
 
@@ -66,6 +68,7 @@ model Product {
   finalPrice       Int
   originalPrice    Int
   salePercent      Int                @default(0)
+  new              Boolean            @default(false)
   popular          Boolean            @default(false)
   status           Boolean            @default(true)
   rating           Float              @default(0)
@@ -75,8 +78,23 @@ model Product {
   category         Category           @relation(fields: [categoryId], references: [id])
   orderDetail      ProductsOnOrders[]
   productsOnCart   ProductsOnCart[]
+  reviews          Review[]
 
   @@map("products")
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  content   String
+  rating    Int      @default(0)
+  userId    Int
+  productId Int
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
+
+  @@map("reviews")
 }
 
 model Category {

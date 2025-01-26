@@ -24,14 +24,32 @@ export const sendEmail = async (
 };
 
 export const contactAdmin = async (
-  from: string,
+  name: string,
+  email: string,
+  phoneNumber: string,
   subject: string,
-  content: string,
+  message: string,
 ) => {
+  const emailTemplate = `
+    <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+      <h2 style="color: #007bff;">Bạn có một liên hệ mới</h2>
+      <p><strong>Tên:</strong> ${name}</p>
+      <p><strong>Email:</strong> ${email}</p>
+      <p><strong>Số điện thoại:</strong> ${phoneNumber}</p>
+      <p><strong>Tiêu đề:</strong> ${subject}</p>
+      <p><strong>Nội dung:</strong></p>
+      <div style="background-color: #f9f9f9; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+        ${message}
+      </div>
+      <p style="margin-top: 20px; font-size: 0.9em; color: #666;">
+        Email này được gửi tự động từ hệ thống. Vui lòng không trả lời trực tiếp email này.
+      </p>
+    </div>
+  `;
   return transporter.sendMail({
-    from: from,
+    from: email,
     to: 'xphong.fullstack03@gmail.com',
     subject: subject,
-    html: content,
+    html: emailTemplate,
   });
 };

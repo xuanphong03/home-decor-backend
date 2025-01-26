@@ -76,4 +76,32 @@ export class PermissionsService {
   getPermissionList() {
     return this.prisma.permission.findMany();
   }
+
+  async validatePermission(userId: number, permissionName: string) {
+    const permissionByRole = await this.prisma.usersOnRoles.findFirst({
+      where: { userId },
+      include: {
+        role: {
+          include: {
+            permissions: {
+              include: {
+                permission: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (
+      !permissionByRole?.role ||
+      !permissionByRole?.role?.permissions?.length
+    ) {
+      return null;
+    }
+    const validPermission = permissionByRole.role.permissions.find(
+      ({ permission }) => permission.name === permissionName,
+    );
+    if (!validPermission) return null;
+    return permissionByRole;
+  }
 }

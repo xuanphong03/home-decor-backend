@@ -1,31 +1,42 @@
 import {
   Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpStatus,
   Param,
   Patch,
   Post,
   Query,
+  Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { ProductsService } from './products.service';
 import { CreateProductDto } from './dto/create-product.dto';
 import { Response } from 'express';
 import { z } from 'zod';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsService } from '../admin/permissions/permissions.service';
+import { ProductPermission } from 'src/app.interface';
+import { ReviewProductDto } from './dto/review-product.dto';
 
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly permissionsService: PermissionsService,
+  ) {}
 
   @Get()
   async getProductList(@Query() query, @Res() res: Response) {
     const {
       q,
       _page = 1,
-      _limit = 3,
+      _limit = 10,
       _order = 'asc',
       _sort = 'id',
+      _new = false,
       categoryId,
       gtePrice,
       ltePrice,
@@ -42,6 +53,9 @@ export class ProductsController {
           },
         },
       ];
+    }
+    if (_new) {
+      filter.new = _new === 'true';
     }
     if (categoryId) {
       filter.categoryId = +categoryId;
@@ -94,7 +108,7 @@ export class ProductsController {
   async getRelatedProductList(@Query() query, @Res() res: Response) {
     const {
       _page = 1,
-      _limit = 3,
+      _limit = 10,
       _order = 'asc',
       _sort = 'id',
       productId,
@@ -146,8 +160,24 @@ export class ProductsController {
     });
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  async createProduct(@Body() body: CreateProductDto, @Res() res: Response) {
+  async createProduct(
+    @Req() req,
+    @Body() body: CreateProductDto,
+    @Res() res: Response,
+  ) {
+    const { userId } = req.user;
+    const validPermission = await this.permissionsService.validatePermission(
+      +userId,
+      ProductPermission.CREATE,
+    );
+    if (!validPermission) {
+      return res.status(HttpStatus.FORBIDDEN).json({
+        success: false,
+        message: 'Bạn không có quyền tạo sản phẩm',
+      });
+    }
     const schema = z.object({
       name: z
         .string({
@@ -197,6 +227,41 @@ export class ProductsController {
       success: true,
       message: 'Cập nhật sản phẩm thành công',
       data: product,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Post('/review-product')
+  async reviewProduct(
+    @Req() req,
+    @Body() body: ReviewProductDto,
+    @Res() res: Response,
+  ) {
+    const { userId } = req.user;
+    const purchased = await this.productsService.findProductInOrdersByUser(
+      +userId,
+      +body.productId,
+    );
+    if (!purchased) {
+      throw new ForbiddenException(
+        'Bạn chưa mua sản phẩm này nên chưa thể đánh giá!',
+      );
+    }
+    const productReview = await this.productsService.reviewProduct(
+      +userId,
+      body,
+    );
+    if (!productReview) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        success: true,
+        message: 'Đánh giá sản phẩm thất bại',
+        data: productReview,
+      });
+    }
+    return res.status(HttpStatus.CREATED).json({
+      success: true,
+      message: 'Đánh giá sản phẩm thành công',
+      data: productReview,
     });
   }
 }

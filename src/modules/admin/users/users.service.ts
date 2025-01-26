@@ -11,10 +11,8 @@ export class UsersService {
     const users = await this.prisma.user.findMany({
       skip: skip,
       take: limit,
-      orderBy: {
-        [sort]: order,
-      },
-      where: filter,
+      orderBy: { [sort]: order },
+      where: { ...filter, isRoot: false },
       include: {
         permissions: { include: { permission: true } },
         roles: { include: { role: true } },
@@ -81,6 +79,18 @@ export class UsersService {
           create: dataUpdate,
         },
       },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        permissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
     });
   }
 
@@ -108,24 +118,46 @@ export class UsersService {
     });
   }
 
-  updateUserPermissions(id: number, body: any) {
-    const dataUpdate = body.map((permissionId: number) => {
-      return {
-        createdAt: new Date(),
-        updatedAt: new Date(),
-        permission: {
-          connect: {
-            id: permissionId,
+  async updateUserPermissions(id: number, body: any) {
+    const permissionsFromBody = await Promise.all(
+      body.map(async (permissionName: string) => {
+        let permission = await this.prisma.permission.findFirst({
+          where: { name: permissionName },
+        });
+        if (!permission) {
+          permission = await this.prisma.permission.create({
+            data: { name: permissionName, status: true },
+          });
+        }
+        return {
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          permission: {
+            connect: {
+              id: permission.id,
+            },
           },
-        },
-      };
-    });
+        };
+      }),
+    );
     return this.prisma.user.update({
       where: { id },
       data: {
         permissions: {
           deleteMany: {},
-          create: dataUpdate,
+          create: permissionsFromBody,
+        },
+      },
+      include: {
+        roles: {
+          include: {
+            role: true,
+          },
+        },
+        permissions: {
+          include: {
+            permission: true,
+          },
         },
       },
     });
@@ -137,6 +169,25 @@ export class UsersService {
       data: {
         permissions: {
           deleteMany: {},
+        },
+      },
+    });
+  }
+
+  updateUserById(id: number, body: any) {
+    const updateData: any = {};
+    updateData.isAdmin = body.isAdmin ? true : false;
+    updateData.isSupport = body.isSupport ? true : false;
+    updateData.updatedAt = new Date();
+    return this.prisma.user.update({
+      where: { id },
+      data: updateData,
+      include: {
+        permissions: {
+          include: { permission: true },
+        },
+        roles: {
+          include: { role: true },
         },
       },
     });

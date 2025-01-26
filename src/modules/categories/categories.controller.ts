@@ -7,23 +7,31 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import { Response } from 'express';
 import { z } from 'zod';
 import { CategoriesService } from './categories.service';
 import { CreateCategoryDto } from './dto/create-category.dto';
 import { UpdateCategoryDto } from './dto/update-category.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { PermissionsService } from '../admin/permissions/permissions.service';
+import { CategoryPermission } from 'src/app.interface';
 
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categoriesService: CategoriesService) {}
+  constructor(
+    private readonly categoriesService: CategoriesService,
+    private readonly permissionsService: PermissionsService,
+  ) {}
 
   @Get()
   async getCategoryList(@Query() query, @Res() res: Response) {
     const {
       _page = 1,
-      _limit = 3,
+      _limit = 10,
       _order = 'asc',
       _sort = 'id',
       status,
@@ -83,8 +91,24 @@ export class CategoriesController {
     });
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Post()
-  async createCategory(@Body() body: CreateCategoryDto, @Res() res: Response) {
+  async createCategory(
+    @Req() req,
+    @Body() body: CreateCategoryDto,
+    @Res() res: Response,
+  ) {
+    const { userId } = req.user;
+    const validPermission = await this.permissionsService.validatePermission(
+      +userId,
+      CategoryPermission.CREATE,
+    );
+    if (!validPermission) {
+      return res.status(HttpStatus.FORBIDDEN).json({
+        success: false,
+        message: 'Bạn không có quyền tạo danh mục',
+      });
+    }
     const schema = z.object({
       name: z
         .string({

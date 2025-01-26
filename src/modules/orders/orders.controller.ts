@@ -10,6 +10,7 @@ import {
   Res,
   HttpStatus,
   Query,
+  Delete,
 } from '@nestjs/common';
 import { OrdersService } from './orders.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -178,7 +179,7 @@ export class OrdersController {
     const { userId } = req.user;
     const validatePermission = await this.ordersService.validatePermission(
       +userId,
-      OrderPermission.READ,
+      OrderPermission.UPDATE,
     );
     if (!validatePermission) {
       return res.status(HttpStatus.FORBIDDEN).json({
@@ -196,7 +197,25 @@ export class OrdersController {
     return res.status(HttpStatus.OK).json({
       success: true,
       message: 'Cập nhật đơn hàng thành công',
-      data: validatePermission,
+      data: updateOrder,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id')
+  async cancelOrder(@Req() req, @Param('id') id: string, @Res() res: Response) {
+    const { userId } = req.user;
+    const order = await this.ordersService.removeOrderByUser(+userId, +id);
+    if (!order) {
+      return res.status(HttpStatus.BAD_REQUEST).json({
+        success: false,
+        message: 'Hủy đơn hàng thất bại',
+      });
+    }
+    return res.status(HttpStatus.CREATED).json({
+      success: true,
+      message: 'Hủy đơn hàng thành công',
+      data: order,
     });
   }
 }
