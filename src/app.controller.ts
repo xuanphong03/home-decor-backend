@@ -23,6 +23,11 @@ export class AppController {
     private readonly chatsService: ChatsService,
   ) {}
 
+  @Get()
+  getHello() {
+    return 'Home Decor Api';
+  }
+
   @Post('/contact')
   async contact(@Body() body: ContactFormDto, @Res() res: Response) {
     const { name, email, subject, message, phoneNumber } = body;
