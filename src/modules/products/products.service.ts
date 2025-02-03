@@ -29,7 +29,9 @@ export class ProductsService {
 
   async getProductList({ page, limit, sort, order, filter = {} }) {
     const skip = (page - 1) * limit;
-    const total = await this.prisma.product.count();
+    const total = await this.prisma.product.count({
+      where: filter,
+    });
     const products = await this.prisma.product.findMany({
       skip: skip,
       take: limit,

@@ -14,14 +14,10 @@ import { AppService } from './app.service';
 import { ContactFormDto } from './dto/contact-form.dto';
 // import { contactAdmin } from './utils/mail';
 import { AuthGuard } from '@nestjs/passport';
-import { ChatsService } from './modules/chats/chats.service';
 
 @Controller()
 export class AppController {
-  constructor(
-    private readonly appService: AppService,
-    private readonly chatsService: ChatsService,
-  ) {}
+  constructor(private readonly appService: AppService) {}
 
   @Get()
   getHello() {

@@ -34,10 +34,9 @@ export class ProductsController {
       q,
       _page = 1,
       _limit = 10,
-      _order = 'asc',
       _sort = 'id',
       _new = false,
-      categoryId,
+      category,
       gtePrice,
       ltePrice,
     } = query;
@@ -57,34 +56,28 @@ export class ProductsController {
     if (_new) {
       filter.new = _new === 'true';
     }
-    if (categoryId) {
-      filter.categoryId = +categoryId;
+    if (category) {
+      filter.category = {
+        name: {
+          equals: category,
+          mode: 'insensitive',
+        },
+      };
     }
     // Kiểm tra và khởi tạo filter.finalPrice
     if (gtePrice || ltePrice) {
-      filter.finalPrice = {};
-      if (gtePrice) {
-        filter.finalPrice['gte'] = +gtePrice;
-      }
-      if (ltePrice) {
-        filter.finalPrice['lte'] = +ltePrice;
-      }
+      filter.finalPrice = {
+        ...(gtePrice && { gte: +gtePrice }),
+        ...(ltePrice && { lte: +ltePrice }),
+      };
     }
-
-    let sort = _sort;
-    let order = _order;
-    if (sort === 'default') {
-      sort = 'id';
-    } else if (sort === 'latest') {
-      sort = 'createdAt';
-      order = 'desc';
-    } else if (sort === 'price') {
-      sort = 'finalPrice';
-      order = 'asc';
-    } else if (sort === 'price-desc') {
-      sort = 'finalPrice';
-      order = 'desc';
-    }
+    const sortOptions = {
+      default: { sort: 'id', order: 'asc' },
+      latest: { sort: 'createdAt', order: 'desc' },
+      price: { sort: 'finalPrice', order: 'asc' },
+      'price-desc': { sort: 'finalPrice', order: 'desc' },
+    };
+    const { sort, order } = sortOptions[_sort] || sortOptions['default'];
 
     const { total, products } = await this.productsService.getProductList({
       page: +_page,
