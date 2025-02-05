@@ -30,7 +30,7 @@ import { EmailConsumer } from './email.consumer';
     ScheduleModule.forRoot(),
     BullModule.forRoot({
       connection: {
-        host: 'localhost',
+        host: 'http://api.homedecor-nxp.site',
         port: 6379,
       },
     }),
