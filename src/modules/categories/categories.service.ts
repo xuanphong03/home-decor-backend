@@ -8,7 +8,7 @@ export class CategoriesService {
 
   async getCategoryList({ page, limit, sort, order, filter = {} }) {
     const skip = (page - 1) * limit;
-    const total = await this.prisma.product.count();
+    const total = await this.prisma.category.count({ where: filter });
     const categories = await this.prisma.category.findMany({
       skip: skip,
       take: limit,
