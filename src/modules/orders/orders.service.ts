@@ -39,6 +39,13 @@ export class OrdersService {
           create: productsFromBody,
         },
       },
+      include: {
+        products: {
+          include: {
+            product: true,
+          },
+        },
+      },
     });
     // Cập nhật lại số lượng sản phẩm trong kho
     await this.updateQuantityByProduct(products);

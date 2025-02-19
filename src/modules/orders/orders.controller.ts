@@ -1,31 +1,24 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
+  Controller,
+  Delete,
+  Get,
+  HttpStatus,
   Param,
-  UseGuards,
+  Patch,
+  Query,
   Req,
   Res,
-  HttpStatus,
-  Query,
-  Delete,
+  UseGuards,
 } from '@nestjs/common';
-import { OrdersService } from './orders.service';
 import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
-import { EventEmitter2 } from '@nestjs/event-emitter';
-import { EventName, OrderPermission } from 'src/app.interface';
-import { UsersService } from '../users/users.service';
+import { OrderPermission } from 'src/app.interface';
+import { OrdersService } from './orders.service';
 
 @Controller('orders')
 export class OrdersController {
-  constructor(
-    private readonly ordersService: OrdersService,
-    private readonly userService: UsersService,
-    private eventEmitter: EventEmitter2,
-  ) {}
+  constructor(private readonly ordersService: OrdersService) {}
 
   @UseGuards(AuthGuard('jwt'))
   @Get('')
@@ -137,34 +130,6 @@ export class OrdersController {
       success: true,
       message: 'SUCCESS',
       data: orderDetail,
-    });
-  }
-
-  @UseGuards(AuthGuard('jwt'))
-  @Post()
-  async createOrder(@Req() req, @Body() body: any, @Res() res: Response) {
-    const user = req.user;
-    const activeUser = await this.userService.checkUserStatus(+user.userId);
-    if (!activeUser) {
-      return res.status(HttpStatus.FORBIDDEN).json({
-        success: false,
-        message: 'Vui lòng kích hoạt tài khoản để đặt hàng',
-      });
-    }
-    const order = await this.ordersService.createOrder(+user.userId, body);
-    if (!order) {
-      return res.status(HttpStatus.BAD_REQUEST).json({
-        success: false,
-        message: 'ERROR',
-      });
-    }
-    this.eventEmitter.emit(EventName.ORDER_CREATED, { userId: order.userId });
-    const orderKey = await this.ordersService.generateOrderKey();
-    return res.status(HttpStatus.OK).json({
-      success: true,
-      message: 'SUCCESS',
-      data: order,
-      key: orderKey,
     });
   }
 

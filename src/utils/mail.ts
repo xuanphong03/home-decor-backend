@@ -23,6 +23,46 @@ export const sendEmail = async (
   });
 };
 
+export const confirmOrder = async (
+  email: string,
+  subject: string,
+  customerName: string,
+  totalPrice: number,
+  products: { name: string; quantity: number; price: number }[],
+) => {
+  const productRows = products.map((product) => {
+    return `<tr>
+      <td>${product.name}</td>
+      <td>${product.quantity}</td>
+      <td>${product.price} VND</td>
+    </tr>`;
+  });
+
+  const confirmOrderTemplate = `
+    <div style="font-family: Arial, sans-serif; text-align: center">
+        <h2>Cảm ơn bạn đã đặt hàng!</h2>
+        <p>Xin chào <strong>${customerName}</strong>,</p>
+        <p>Đơn hàng của bạn đã được xác nhận.</p>
+        <table border="1" style="width: 100%; border-collapse: collapse">
+          <tr>
+            <th>Sản phẩm</th>
+            <th>Số lượng</th>
+            <th>Giá</th>
+          </tr>
+          ${productRows}
+        </table>
+        <p><strong>Tổng cộng:</strong> ${totalPrice} VND</p>
+      </div>
+  `;
+
+  return transporter.sendMail({
+    from: 'Home Decor 👻 <xphong.fullstack03@gmail.com>',
+    to: email,
+    subject: subject,
+    html: confirmOrderTemplate,
+  });
+};
+
 export const contactAdmin = async (
   name: string,
   email: string,

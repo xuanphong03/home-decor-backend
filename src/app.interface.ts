@@ -3,6 +3,12 @@ export enum QueueName {
   TELEGRAM = 'telegram',
 }
 
+export enum QueueTask {
+  CONTACT_ADMIN = 'contactAdmin',
+  SEND_MESSAGE = 'sendMessage',
+  ORDER_CONFIRMATION = 'orderConfirmation',
+}
+
 export enum ShippingStatus {
   PENDING = 'PENDING',
   SHIPPING = 'SHIPPING',

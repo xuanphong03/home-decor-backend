@@ -90,6 +90,14 @@ export class OrdersService {
           create: productsFromBody,
         },
       },
+      include: {
+        products: {
+          include: {
+            product: true,
+          },
+        },
+        paymentMethod: true,
+      },
     });
   }
 

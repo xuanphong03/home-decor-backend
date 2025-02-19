@@ -15,12 +15,14 @@ import { AuthGuard } from '@nestjs/passport';
 import { Response } from 'express';
 import { UsersService } from 'src/modules/users/users.service';
 import { OrdersService } from './orders.service';
+import { AppService } from 'src/app.service';
 
 @Controller('user/orders')
 export class OrdersController {
   constructor(
-    private readonly ordersService: OrdersService,
+    private readonly appService: AppService,
     private readonly usersService: UsersService,
+    private readonly ordersService: OrdersService,
   ) {}
 
   @UseGuards(AuthGuard('jwt'))
@@ -81,6 +83,18 @@ export class OrdersController {
         message: 'Đặt hàng thất bại',
       });
     }
+    // // Gửi email xác nhận đơn hàng
+    const confirmMailProducts = order.products.map(
+      ({ product, quantity, price }) => {
+        return { name: product.name, quantity, price };
+      },
+    );
+
+    await this.appService.sendOrderConfirmation(
+      +user.userId,
+      +order.totalPrice,
+      confirmMailProducts,
+    );
     return res.status(HttpStatus.OK).json({
       success: true,
       message: 'SUCCESS',

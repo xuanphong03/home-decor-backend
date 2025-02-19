@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   ForbiddenException,
   Get,
   HttpStatus,
@@ -200,6 +201,37 @@ export class ProductsController {
       success: true,
       message: 'Thêm mới sản phẩm thành công',
       data: product,
+    });
+  }
+
+  @UseGuards(AuthGuard('jwt'))
+  @Delete(':id')
+  async deleteProduct(
+    @Req() req,
+    @Param('id') id: number,
+    @Res() res: Response,
+  ) {
+    const { userId } = req.user;
+    const validPermission = await this.permissionsService.validatePermission(
+      +userId,
+      ProductPermission.DELETE,
+    );
+    if (!validPermission) {
+      return res.status(HttpStatus.FORBIDDEN).json({
+        success: false,
+        message: 'Bạn không có quyền xóa sản phẩm',
+      });
+    }
+    const product = await this.productsService.deleteProduct(+id);
+    if (!product) {
+      return res.status(HttpStatus.NOT_FOUND).json({
+        success: false,
+        message: 'Sản phẩm không tồn tại',
+      });
+    }
+    return res.status(HttpStatus.OK).json({
+      success: true,
+      message: 'Xóa sản phẩm thành công',
     });
   }
 

@@ -122,6 +122,10 @@ export class ProductsService {
     });
   }
 
+  async deleteProduct(id: number) {
+    return this.prisma.product.delete({ where: { id } });
+  }
+
   async findProductInOrdersByUser(userId: number, productId: number) {
     const product = await this.prisma.order.findFirst({
       where: {
